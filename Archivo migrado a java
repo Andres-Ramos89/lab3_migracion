@@ -1,0 +1,121 @@
+// Main.java - Código completo unificado en un solo archivo
+
+public class Main {
+    public static void main(String[] args) {
+        try (RegistroAuditoriaBancaria auditoria = new RegistroAuditoriaBancaria()) {
+            CuentaBancaria ahorros = new CuentaAhorros("AH-001", "Andres Ramos", 1000.0, 0.02);
+            CuentaBancaria corriente = new CuentaCorriente("CC-001", "Andres Ramos", 200.0, 500.0, 0.05);
+
+            auditoria.registrarTransaccion("Depósito inicial en cuenta de ahorros");
+            ahorros.depositar(500.0);
+
+            auditoria.registrarTransaccion("Retiro en cuenta corriente que activa sobregiro");
+            boolean exitoRetiro = corriente.retirar(400.0);
+
+            if (exitoRetiro) {
+                auditoria.registrarTransaccion("Retiro autorizado en cuenta corriente. Saldo actual: " + corriente.getSaldo());
+            }
+
+            ahorros.aplicarComisionMensual();
+            corriente.aplicarComisionMensual();
+        } catch (Exception e) {
+            System.err.println("Error en la ejecución del sistema: " + e.getMessage());
+        }
+    }
+}
+
+// Clase abstracta base (sin el modificador 'public')
+abstract class CuentaBancaria {
+    private String numeroCuenta;
+    private String titular;
+    protected double saldo;
+
+    public CuentaBancaria(String numeroCuenta, String titular, double saldoInicial) {
+        this.numeroCuenta = numeroCuenta;
+        this.titular = titular;
+        this.saldo = saldoInicial;
+    }
+
+    public String getNumeroCuenta() { return numeroCuenta; }
+    public String getTitular() { return titular; }
+    public double getSaldo() { return saldo; }
+
+    public void depositar(double monto) {
+        if (monto > 0) {
+            this.saldo += monto;
+        }
+    }
+
+    public abstract boolean retirar(double monto);
+    public abstract void aplicarComisionMensual();
+}
+
+// Subclase CuentaAhorros
+class CuentaAhorros extends CuentaBancaria {
+    private double tasaInteresMensual;
+    private static final double COMISION_MANEJO_FIJA = 5.0;
+
+    public CuentaAhorros(String numeroCuenta, String titular, double saldoInicial, double tasaInteresMensual) {
+        super(numeroCuenta, titular, saldoInicial);
+        this.tasaInteresMensual = tasaInteresMensual;
+    }
+
+    @Override
+    public boolean retirar(double monto) {
+        if (monto > 0 && this.saldo >= monto) {
+            this.saldo -= monto;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void aplicarComisionMensual() {
+        this.saldo += (this.saldo * this.tasaInteresMensual);
+        this.saldo -= COMISION_MANEJO_FIJA;
+    }
+}
+
+// Subclase CuentaCorriente
+class CuentaCorriente extends CuentaBancaria {
+    private double cupoSobregiro;
+    private double comisionSobregiro;
+
+    public CuentaCorriente(String numeroCuenta, String titular, double saldoInicial, double cupoSobregiro, double comisionSobregiro) {
+        super(numeroCuenta, titular, saldoInicial);
+        this.cupoSobregiro = cupoSobregiro;
+        this.comisionSobregiro = comisionSobregiro;
+    }
+
+    @Override
+    public boolean retirar(double monto) {
+        if (monto > 0 && (this.saldo + this.cupoSobregiro) >= monto) {
+            this.saldo -= monto;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void aplicarComisionMensual() {
+        if (this.saldo < 0) {
+            this.saldo -= (Math.abs(this.saldo) * this.comisionSobregiro);
+        }
+    }
+}
+
+// Clase de recursos que implementa AutoCloseable
+class RegistroAuditoriaBancaria implements AutoCloseable {
+    public RegistroAuditoriaBancaria() {
+        System.out.println("[AUDITORÍA]: Se abre la sesión de registro de transacciones.");
+    }
+
+    public void registrarTransaccion(String detalle) {
+        System.out.println("[LOG]: " + detalle);
+    }
+
+    @Override
+    public void close() {
+        System.out.println("[AUDITORÍA]: Se cierra de manera segura el recurso de registro de auditoría.");
+    }
+}
