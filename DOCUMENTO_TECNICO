@@ -13,3 +13,15 @@ Para corregir las deficiencias del modelo procedural, se migró el sistema a una
 * **Clase Abstracta `CuentaBancaria`:** Encapsula los atributos privados `numeroCuenta`, `titular` y `saldo`, protegiendo el estado mediante getters y métodos con validación estricta.
 * **Subclase `CuentaAhorros`:** Extiende la clase base e implementa la regla de no permitir sobregiros (`saldo >= monto`) y la adición de rendimientos mensuales por tasa de interés.
 * **Subclase `CuentaCorriente`:** Permite retiros en saldo negativo hasta el límite de `cupoSobregiro` y calcula intereses por mora en la comisión mensual.
+
+## 3. Gestión de Recursos con AutoCloseable
+Para replicar la garantía de liberación de recursos del patrón RAII de C++ sin depender del ciclo indeterminista del Garbage Collector de Java, se implementó la interfaz `java.lang.AutoCloseable` en la clase `RegistroAuditoriaBancaria`.
+
+Mediante la sintaxis `try-with-resources` en `Main.java`, el sistema asegura que los archivos o sesiones de auditoría se cierren automáticamente al finalizar el bloque de ejecución, incluso ante excepciones en el flujo.
+
+## 4. Conclusiones de la Migración
+La refactorización resolvió las fugas de memoria al delegar la gestión del Heap a la máquina virtual de Java y al patrón `AutoCloseable`. Además, el uso de polimorfismo eliminó la dependencia de condicionales de tipo de cuenta (`tipoCuenta == 1` o `tipoCuenta == 2`), facilitando la escalabilidad del sistema financiero.
+
+## 5. Enlaces de Interacción con IA Socrática
+* **Enlace a la Gema Socrática compartida:** [Pega aquí la URL directa de tu Gema]
+* **Enlace público al historial del Chat:** [Pega aquí la URL pública del chat compartida desde Gemini]
