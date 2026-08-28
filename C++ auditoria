@@ -3,7 +3,11 @@
 #include <fstream>
 #include <string>
 
+// AUDITORÍA: Uso de 'struct' en lugar de una clase POO.
+// Los miembros son públicos por defecto, lo que viola el principio de encapsulamiento.
 struct CuentaLegacy {
+    // AUDITORÍA: Uso de puntero 'char*' gestionado manualmente para cadenas de texto.
+    // Esto es propenso a desbordamientos de búfer y fugas de memoria si no se libera adecuadamente.
     char* titular;
     double saldo;
     int tipoCuenta; // 1: Ahorros, 2: Corriente
@@ -11,8 +15,14 @@ struct CuentaLegacy {
 };
 
 CuentaLegacy* crearCuenta(const char* nombre, double saldoInicial, int tipo) {
+    // AUDITORÍA: Asignación dinámica de memoria para la estructura 'CuentaLegacy'.    
     CuentaLegacy* c = new CuentaLegacy();
+
+    // AUDITORÍA: Asignación dinámica de 50 bytes para el arreglo 'titular'.
+    // Si no se llama 'delete[]' más adelante, estos 50 bytes quedarán colgados en el Heap (Memory Leak).
     c->titular = new char[50];
+
+    // AUDITORÍA: 'strcpy' no verifica el tamaño del búfer de destino, lo que genera riesgo de Buffer Overflow.
     strcpy(c->titular, nombre);
     c->saldo = saldoInicial;
     c->tipoCuenta = tipo;
@@ -24,7 +34,18 @@ void procesarRetiro(CuentaLegacy* c, double monto) {
     if (c->tipoCuenta == 1 && c->saldo >= monto) {
         c->saldo -= monto;
     } else if (c->tipoCuenta == 2 && (c->saldo + c->limiteSobregiro) >= monto) {
+        // AUDITORÍA: Fuga de lógica de negocio. No se aplican cobros de mora ni comisiones por sobregiro.
         c->saldo -= monto; // Fuga potencial de lógica y sin registro de auditoría
+        // AUDITORÍA: No existe un registro de auditoría en archivo/log para transacciones financieras de riesgo.
     }
-    // NOTA: No hay liberación de memoria de 'titular' ni de 'c' al terminar el programa
+    // AUDITORÍA CRÍTICA: No existe ninguna llamada a 'delete[] c->titular' ni a 'delete c'.
+    // Toda la memoria reservada con 'new' durante el programa se pierde al finalizar la función o la ejecución.
+}
+
+int main() {
+    CuentaLegacy* cuenta1 = crearCuenta("Andres Ramos", 1000.0, 1);
+    procesarRetiro(cuenta1, 200.0);
+    
+    // AUDITORÍA: Fin del programa sin liberación explicita de memoria reservada con 'new'.
+    return 0;
 }
