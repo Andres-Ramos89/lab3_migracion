@@ -1,0 +1,15 @@
+# Informe Técnico: Migración de Sistema Bancario C++ Legacy a Java POO
+
+## 1. Análisis de Memoria y Auditoría en C++ Legacy
+Durante el análisis del componente bancario heredado en C++, se identificaron los siguientes fallos críticos de seguridad y gestión de memoria:
+
+* **Memory Leaks (Fugas de memoria):** En la función `crearCuenta`, se realiza la asignación de memoria dinámica `new CuentaLegacy()` y `new char[50]`. Al procesar retiros o destruir cuentas, el programa carece de las instrucciones `delete` y `delete[]`, dejando espacio reservado de forma permanente en el Heap durante la ejecución.
+* **Falta de Encapsulamiento:** La estructura `CuentaLegacy` utiliza atributos públicos por defecto, permitiendo que el saldo o los límites de sobregiro sean alterados directamente sin validaciones de negocio.
+* **Riesgo de Desbordamiento de Búfer:** La función `strcpy` escribe sobre `titular` sin verificar el límite del espacio asignado de 50 bytes.
+
+## 2. Rediseño Arquitectónico POO en Java 21
+Para corregir las deficiencias del modelo procedural, se migró el sistema a una arquitectura orientada a objetos:
+
+* **Clase Abstracta `CuentaBancaria`:** Encapsula los atributos privados `numeroCuenta`, `titular` y `saldo`, protegiendo el estado mediante getters y métodos con validación estricta.
+* **Subclase `CuentaAhorros`:** Extiende la clase base e implementa la regla de no permitir sobregiros (`saldo >= monto`) y la adición de rendimientos mensuales por tasa de interés.
+* **Subclase `CuentaCorriente`:** Permite retiros en saldo negativo hasta el límite de `cupoSobregiro` y calcula intereses por mora en la comisión mensual.
